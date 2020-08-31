@@ -10,78 +10,108 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
-/** @type {null | HTMLDivElement} */
-const slotControls = document.querySelector("#slot-controls");
+/** @type {HTMLDivElement} */
+const slotControls = validate(document.querySelector("#slot-controls"));
 
-/** @type {null | HTMLTemplateElement} */
-const slotControlTemplate = document.querySelector("#slot-control-template");
+/** @type {HTMLTemplateElement} */
+const template = validate(document.querySelector("#slot-control-template"));
 
-/** @type {null | HTMLInputElement} */
-const saveButton = document.querySelector('input[type="submit"]');
+/** @type {HTMLInputElement} */
+const saveButton = validate(document.querySelector('input[type="submit"]'));
+
+/** @type {HTMLFormElement} */
+const form = validate(document.querySelector("#form"));
 
 /**
  * Show the slots in the options page.
  * @param {Slot[]} slots The slots.
  */
 function showSlots(slots) {
-  if (!slotControls || !slotControlTemplate || !saveButton) {
-    return;
-  }
-
   slotControls.innerHTML = "";
   saveButton.disabled = true;
 
   for (const slot of slots) {
-    /** @type {HTMLDivElement} */
-    // @ts-ignore
-    const control = slotControlTemplate.content.cloneNode(true);
+    const control = toElement(template.content.cloneNode(true));
 
-    /** @type {null | HTMLInputElement} */
-    const timeInput = control.querySelector('input[type="time"]');
-    if (timeInput) {
-      timeInput.value = slot.time;
-    }
-
-    /** @type {null | HTMLSelectElement} */
-    const themeSelector = control.querySelector("select");
-    if (themeSelector) {
-      themeSelector.value = slot.theme;
-    }
+    getTimeInput(control).value = slot.time;
+    getThemeSelector(control).value = slot.theme;
 
     slotControls.appendChild(control);
   }
 }
 
-/** @type {null | HTMLFormElement} */
-const form = document.querySelector("#form");
-form?.addEventListener("change", () => {
-  if (saveButton) {
-    saveButton.disabled = false;
-  }
+form.addEventListener("change", () => {
+  saveButton.disabled = false;
 });
-form?.addEventListener("submit", (event) => {
+form.addEventListener("submit", (event) => {
   event.preventDefault();
 
   /** @type {Slot[]} */
   const slots = [];
   const slotControls = document.querySelectorAll(".slot-control");
   for (const control of slotControls) {
-    /** @type {null | HTMLInputElement} */
-    const timeInput = control.querySelector('input[type="time"]');
-    /** @type {null | HTMLSelectElement} */
-    const themeSelector = control.querySelector("select");
-    if (timeInput && themeSelector) {
-      const time = timeInput.value;
-      /** @type {ThemeId} */
-      // @ts-ignore
-      const theme = themeSelector.value;
-      slots.push({ time, theme });
-    }
+    const time = getTimeInput(control).value;
+    const theme = toThemeId(getThemeSelector(control).value);
+    slots.push({ time, theme });
   }
 
   chrome.storage.sync.set({ slots }, () => {
-    if (saveButton) {
-      saveButton.disabled = true;
-    }
+    saveButton.disabled = true;
   });
 });
+
+/**
+ * Get the time input from the slot control
+ * @param {Element} slotControl The slot control.
+ * @returns {HTMLInputElement} The time input element.
+ */
+function getTimeInput(slotControl) {
+  /** @type {HTMLInputElement} */
+  const timeInput = validate(slotControl.querySelector('input[type="time"]'));
+  return timeInput;
+}
+
+/**
+ * Get the theme selector from the slot control
+ * @param {Element} slotControl The slot control.
+ * @returns {HTMLSelectElement} The theme selector element.
+ */
+function getThemeSelector(slotControl) {
+  /** @type {HTMLSelectElement} */
+  const themeSelector = validate(slotControl.querySelector("select"));
+  return themeSelector;
+}
+
+/**
+ * Convert the value to theme ID.
+ * @param {string} value The value.
+ * @returns {ThemeId} The theme ID.
+ */
+function toThemeId(value) {
+  // @ts-expect-error Type casting the value to theme ID.
+  return value;
+}
+
+/**
+ * Type cast the node to an element.
+ * @param {Node} element The node.
+ * @returns {Element} The element.
+ */
+function toElement(element) {
+  // @ts-expect-error Type casting to element.
+  return element;
+}
+
+/**
+ * Validate the value is not null.
+ * @template T
+ * @param {null | T} value The value.
+ * @returns {T} The value after validated.
+ */
+function validate(value) {
+  if (value) {
+    return value;
+  } else {
+    throw new Error("The value is null");
+  }
+}
