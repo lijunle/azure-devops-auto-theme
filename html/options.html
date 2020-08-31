@@ -4,6 +4,21 @@
     <title>Azure DevOps Auto Theme</title>
   </head>
   <body>
-    This is the options page for Azure DevOps Auto Theme extension.
+    <h1>Azure DevOps Auto Theme</h1>
+    <p>Configure Azure DevOps Auto Theme extension.</p>
+    <form id="form">
+      <div id="slot-controls"></div>
+      <input type="submit" value="Save" />
+    </form>
+    <template id="slot-control-template">
+      <div class="slot-control">
+        <input type="time" />
+        <select>
+          <option value="ms.vss-web.vsts-theme">Light</option>
+          <option value="ms.vss-web.vsts-theme-dark">Dark</option>
+        </select>
+      </div>
+    </template>
+    <script src="/src/options.js"></script>
   </body>
 </html>
