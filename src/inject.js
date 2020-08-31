@@ -5,34 +5,41 @@
   const channel =
     window.document.body.getAttribute("data-auto-theme-channel") || "";
 
+  /** @type {undefined | Promise<VssService>} */
+  let servicePromise;
+
   /**
    * Get Visual Studio service.
    * @returns {Promise<VssService>} The promise resolved with service.
    */
   function getService() {
-    return new Promise((resolve) => {
-      // The context will not initialize service again if name exists.
-      // Append channel to the service name to make sure we could resolve
-      // the service on each new injection (e.g., extension updated).
-      const context = window.require("VSS/Platform/Context");
-      const serviceName = `AzureDevOpsAutoThemeService-${channel}`;
-      context.Services.add(serviceName, {
-        options: 1,
-        serviceFactory: class extends context.VssService {
-          constructor() {
-            super();
+    if (!servicePromise) {
+      servicePromise = new Promise((resolve) => {
+        // The context will not initialize service again if name exists.
+        // Append channel to the service name to make sure we could resolve
+        // the service on each new injection (e.g., extension updated).
+        const context = window.require("VSS/Platform/Context");
+        const serviceName = `AzureDevOpsAutoThemeService-${channel}`;
+        context.Services.add(serviceName, {
+          options: 1,
+          serviceFactory: class extends context.VssService {
+            constructor() {
+              super();
 
-            // The service is not initialized at this moment, do not
-            // access page context here.
-            resolve(this);
-          }
-        },
+              // The service is not initialized at this moment, do not
+              // access page context here.
+              resolve(this);
+            }
+          },
+        });
+        context.Services.notify(
+          { key: serviceName, value: { options: 4 } },
+          "add"
+        );
       });
-      context.Services.notify(
-        { key: serviceName, value: { options: 4 } },
-        "add"
-      );
-    });
+    }
+
+    return servicePromise;
   }
 
   /**
@@ -65,14 +72,14 @@
         serviceName: "ITfsThemeService",
         methodName: "getCurrentThemeId",
       });
+    // @todo The current theme ID is not matching the current UI.
+    console.log("Current theme", currentThemeId);
 
-    if (currentThemeId !== theme.id) {
-      // Apply the theme and save it.
-      service.pageContext.getService("ITfsThemeService").setTheme(theme);
+    // Apply the theme and save it.
+    // service.pageContext.getService("ITfsThemeService").setTheme(theme);
 
-      // Apply the theme but not save it.
-      // service.pageContext.getService("IVssThemeService").applyTheme(theme);
-    }
+    // Apply the theme but not save it.
+    service.pageContext.getService("IVssThemeService").applyTheme(theme);
   }
 
   window.addEventListener("message", async (event) => {
