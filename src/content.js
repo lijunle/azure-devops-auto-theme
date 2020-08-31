@@ -17,15 +17,20 @@ window.document.body.setAttribute("data-auto-theme-channel", channel);
 injectScript(chrome.extension.getURL(`/src/inject.js?channel=${channel}`));
 
 let resolve = () => {};
+/** @type {Promise<void>} */
 const completed = new Promise((x) => (resolve = x));
-window.addEventListener("message", function callback({ data: message }) {
+window.addEventListener("message", function callback(event) {
+  /** @type {ChannelMessage} */
+  const message = event.data;
   if (message.channel === channel && message.action === "complete") {
     window.removeEventListener("message", callback);
     resolve();
   }
 });
 
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((
+  /** @type {Omit<ChannelMessage, "channel">} */ message
+) => {
   completed.then(() => {
     // We need to wait on inject script completed to delegate the message.
     window.postMessage({ channel, ...message }, "*");
