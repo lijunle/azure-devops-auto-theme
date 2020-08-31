@@ -3,6 +3,11 @@
   "name": "Azure DevOps Auto Theme",
   "description": "A browser extension to automatically switch Azure DevOps theme.",
   "version": "0.0.1",
+  "options_page": "/html/options.html",
+  "browser_action": {
+    "default_title": "Azure DevOps Auto Theme",
+    "default_popup": "/html/popup.html"
+  },
   "content_scripts": [
     {
       "matches": [
