@@ -2,7 +2,7 @@
 
 /** @type {Slot[]} */
 const defaultSlots = [
-  { time: "6:00", theme: "ms.vss-web.vsts-theme" },
+  { time: "06:00", theme: "ms.vss-web.vsts-theme" },
   { time: "18:00", theme: "ms.vss-web.vsts-theme-dark" },
 ];
 
@@ -13,9 +13,10 @@ chrome.runtime.onInstalled.addListener(initialize);
 
 chrome.runtime.onStartup.addListener(initialize);
 
-chrome.storage.onChanged.addListener((changes) => {
-  if (changes["slots"]) {
+chrome.storage.onChanged.addListener(async (changes) => {
+  if (changes["slots"] && changes["slots"].newValue) {
     slots = changes["slots"].newValue;
+    await switchTheme();
   }
 });
 
@@ -114,7 +115,7 @@ function getTheme() {
     if (
       slotTime.hour < currentTime.hour ||
       (slotTime.hour === currentTime.hour &&
-        slotTime.minute < currentTime.minute)
+        slotTime.minute <= currentTime.minute)
     ) {
       index++;
     } else {
