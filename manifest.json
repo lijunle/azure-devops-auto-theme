@@ -3,17 +3,11 @@
   "name": "Azure DevOps Auto Theme",
   "description": "A browser extension to automatically switch Azure DevOps theme.",
   "version": "0.0.1",
-  "permissions": [
-    "https://*.visualstudio.com/*",
-    "storage",
-    "tabs"
-  ],
+  "permissions": ["https://*.visualstudio.com/*", "storage", "tabs"],
   "options_page": "/html/options.html",
   "background": {
     "persistent": false,
-    "scripts": [
-      "/src/background.js"
-    ]
+    "scripts": ["/src/background.js"]
   },
   "browser_action": {
     "default_title": "Azure DevOps Auto Theme",
@@ -21,15 +15,9 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://*.visualstudio.com/*"
-      ],
-      "js": [
-        "/src/content.js"
-      ]
+      "matches": ["https://*.visualstudio.com/*"],
+      "js": ["/src/content.js"]
     }
   ],
-  "web_accessible_resources": [
-    "/src/inject.js"
-  ]
+  "web_accessible_resources": ["/src/inject.js"]
 }

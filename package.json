@@ -4,11 +4,20 @@
     "url": "https://github.com/lijunle/azure-devops-auto-theme.git"
   },
   "scripts": {
+    "format": "prettier --write .",
     "build": "tsc",
     "watch": "tsc --watch"
   },
   "devDependencies": {
     "@types/chrome": "0.0.122",
+    "husky": "^4.2.5",
+    "prettier": "^2.1.1",
+    "pretty-quick": "^3.0.0",
     "typescript": "^4.0.2"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
   }
 }
