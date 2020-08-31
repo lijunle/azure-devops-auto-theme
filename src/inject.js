@@ -65,6 +65,9 @@
    * @returns {Promise<void>} The promise to theme applied.
    */
   async function applyTheme(service, theme) {
+    // The current theme ID from backend storage.
+    // If there are multiple pages in browser, some pages may show different
+    // theme in page than the value from backend storage.
     const currentThemeId = await service.pageContext
       .getService("IVssContributionService")
       .executeCommandEx("ITfsThemeService.getCurrentThemeId", {
@@ -72,14 +75,15 @@
         serviceName: "ITfsThemeService",
         methodName: "getCurrentThemeId",
       });
-    // @todo The current theme ID is not matching the current UI.
-    console.log("Current theme", currentThemeId);
 
-    // Apply the theme and save it.
-    // service.pageContext.getService("ITfsThemeService").setTheme(theme);
-
-    // Apply the theme but not save it.
-    service.pageContext.getService("IVssThemeService").applyTheme(theme);
+    if (currentThemeId !== theme.id) {
+      // Apply the theme and save it to backend storage.
+      service.pageContext.getService("ITfsThemeService").setTheme(theme);
+    } else {
+      // Apply the theme without save. It handles the case about the UI theme
+      // and backend theme are inconsistent.
+      service.pageContext.getService("IVssThemeService").applyTheme(theme);
+    }
   }
 
   window.addEventListener("message", async (event) => {
