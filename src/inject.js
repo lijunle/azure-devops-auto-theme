@@ -14,10 +14,14 @@
    */
   function getService() {
     if (!servicePromise) {
-      servicePromise = new Promise((resolve) => {
-        // In some Azure DevOps pages, the context module is not loaded yet.
-        // We need to use the async require syntax to acquire it.
-        window.require(["VSS/Platform/Context"], (context) => {
+      servicePromise = getContext().then((context) => {
+        return new Promise((resolve, reject) => {
+          // If the Auto Theme service cannot be initialized within 1 seconds,
+          // reject the promise with failure.
+          const timer = setTimeout(() => {
+            reject(new Error("Fail to initialize Auto Theme service"));
+          }, 1000);
+
           // The context will not initialize service again if name exists.
           // Append channel to the service name to make sure we could resolve
           // the service on each new injection (e.g., extension updated).
@@ -27,6 +31,8 @@
             serviceFactory: class extends context.VssService {
               constructor() {
                 super();
+
+                clearTimeout(timer);
 
                 // The service is not initialized at this moment, do not
                 // access page context here.
@@ -43,6 +49,35 @@
     }
 
     return servicePromise;
+  }
+
+  /** @type {undefined | Promise<VssContext>} */
+  let contextPromise;
+
+  /**
+   * Get the Visual Studio context.
+   * @returns {Promise<VssContext>} The promise resolved with the context.
+   */
+  function getContext() {
+    if (!contextPromise) {
+      contextPromise = new Promise((resolve, reject) => {
+        // If the context module cannot be loaded within 10 seconds, reject the
+        // promise with time out failure. Reset the cache to retry next time.
+        const timer = setTimeout(() => {
+          reject(new Error("Timeout to load the Visual Studio context module"));
+          contextPromise = undefined;
+        }, 10 * 1000);
+
+        // In some Azure DevOps pages, the context module is not loaded yet.
+        // We need to use the async require syntax to acquire it.
+        window.require(["VSS/Platform/Context"], (context) => {
+          clearTimeout(timer);
+          resolve(context);
+        });
+      });
+    }
+
+    return contextPromise;
   }
 
   /**
@@ -101,7 +136,7 @@
         await applyTheme(service, theme);
       }
     } catch (error) {
-      console.debug(error);
+      console.error("Auto Theme extension gets an error", error);
     }
   });
 
