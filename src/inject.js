@@ -14,13 +14,15 @@
    */
   function getService() {
     if (!servicePromise) {
-      servicePromise = getContext().then((context) => {
+      servicePromise = getContext()
+        .then((context) => {
         return new Promise((resolve, reject) => {
           // If the Auto Theme service cannot be initialized within 1 seconds,
           // reject the promise with failure.
-          const timer = setTimeout(() => {
-            reject(new Error("Fail to initialize Auto Theme service"));
-          }, 1000);
+          const timer = setTimeout(
+            () => reject(new Error("Fail to initialize Auto Theme service")),
+            1000
+          );
 
           // The context will not initialize service again if name exists.
           // Append channel to the service name to make sure we could resolve
@@ -44,8 +46,13 @@
             { key: serviceName, value: { options: 4 } },
             "add"
           );
+          });
+        })
+        .catch((error) => {
+          // Reset the service promise cache to let it retry next time.
+          servicePromise = undefined;
+          throw error;
         });
-      });
     }
 
     return servicePromise;
@@ -62,11 +69,11 @@
     if (!contextPromise) {
       contextPromise = new Promise((resolve, reject) => {
         // If the context module cannot be loaded within 10 seconds, reject the
-        // promise with time out failure. Reset the cache to retry next time.
-        const timer = setTimeout(() => {
-          reject(new Error("Timeout to load Visual Studio context"));
-          contextPromise = undefined;
-        }, 10 * 1000);
+        // promise with time out failure.
+        const timer = setTimeout(
+          () => reject(new Error("Timeout to load Visual Studio context")),
+          10 * 1000
+        );
 
         // In some Azure DevOps pages, the context module is already loaded.
         // We need to use the sync require syntax to get it.
@@ -82,6 +89,11 @@
             resolve(context);
           });
         } catch {}
+        }
+      }).catch((error) => {
+        // Reset the context promise cache to let it retry next time.
+        contextPromise = undefined;
+        throw error;
       });
     }
 
