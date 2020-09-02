@@ -16,36 +16,36 @@
     if (!servicePromise) {
       servicePromise = getContext()
         .then((context) => {
-        return new Promise((resolve, reject) => {
-          // If the Auto Theme service cannot be initialized within 1 seconds,
-          // reject the promise with failure.
-          const timer = setTimeout(
-            () => reject(new Error("Fail to initialize Auto Theme service")),
-            1000
-          );
+          return new Promise((resolve, reject) => {
+            // If the Auto Theme service cannot be initialized within 1 seconds,
+            // reject the promise with failure.
+            const timer = setTimeout(
+              () => reject(new Error("Fail to initialize Auto Theme service")),
+              1000
+            );
 
-          // The context will not initialize service again if name exists.
-          // Append channel to the service name to make sure we could resolve
-          // the service on each new injection (e.g., extension updated).
-          const serviceName = `AzureDevOpsAutoThemeService-${channel}`;
-          context.Services.add(serviceName, {
-            options: 1,
-            serviceFactory: class extends context.VssService {
-              constructor() {
-                super();
+            // The context will not initialize service again if name exists.
+            // Append channel to the service name to make sure we could resolve
+            // the service on each new injection (e.g., extension updated).
+            const serviceName = `AzureDevOpsAutoThemeService-${channel}`;
+            context.Services.add(serviceName, {
+              options: 1,
+              serviceFactory: class extends context.VssService {
+                constructor() {
+                  super();
 
-                clearTimeout(timer);
+                  clearTimeout(timer);
 
-                // The service is not initialized at this moment, do not
-                // access page context here.
-                resolve(this);
-              }
-            },
-          });
-          context.Services.notify(
-            { key: serviceName, value: { options: 4 } },
-            "add"
-          );
+                  // The service is not initialized at this moment, do not
+                  // access page context here.
+                  resolve(this);
+                }
+              },
+            });
+            context.Services.notify(
+              { key: serviceName, value: { options: 4 } },
+              "add"
+            );
           });
         })
         .catch((error) => {
@@ -78,17 +78,18 @@
         // In some Azure DevOps pages, the context module is already loaded.
         // We need to use the sync require syntax to get it.
         try {
-          resolve(window.require("VSS/Platform/Context"));
-        } catch {}
-
-        // But in some pages, the context module is not loaded yet.
-        // We need to use the async require syntax to acquire it.
-        try {
-          window.require(["VSS/Platform/Context"], (context) => {
-            clearTimeout(timer);
-            resolve(context);
-          });
-        } catch {}
+          const context = window.require("VSS/Platform/Context");
+          clearTimeout(timer);
+          resolve(context);
+        } catch {
+          // But in some pages, the context module is not loaded yet.
+          // We need to use the async require syntax to acquire it.
+          try {
+            window.require(["VSS/Platform/Context"], (context) => {
+              clearTimeout(timer);
+              resolve(context);
+            });
+          } catch {}
         }
       }).catch((error) => {
         // Reset the context promise cache to let it retry next time.
