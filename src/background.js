@@ -6,20 +6,20 @@ const defaultSlots = [
   { time: "18:00", theme: "ms.vss-web.vsts-theme-dark" },
 ];
 
-/** @type {Slot[]} */
-let slots = [];
-
 chrome.runtime.onInstalled.addListener(initialize);
 
 chrome.runtime.onStartup.addListener(initialize);
 
-chrome.alarms.onAlarm.addListener(setupThemeAndTimer);
+chrome.alarms.onAlarm.addListener(async () => {
+  const slots = await getSlotsOrSetDefault();
+  await setupThemeAndTimer(slots);
+});
 
 chrome.storage.onChanged.addListener(async (changes) => {
+  /** @type {undefined | Slot[]} */
   const newSlots = changes["slots"]?.newValue;
   if (newSlots) {
-    slots = newSlots;
-    await setupThemeAndTimer();
+    await setupThemeAndTimer(newSlots);
   }
 });
 
@@ -28,17 +28,18 @@ chrome.storage.onChanged.addListener(async (changes) => {
  * @returns {Promise<void>} The promise to initialized.
  */
 async function initialize() {
-  slots = await retrieveSlotsOrSetDefault();
   await injectContentScript();
-  await setupThemeAndTimer();
+
+  const slots = await getSlotsOrSetDefault();
+  await setupThemeAndTimer(slots);
 }
 
 /**
- * Retrieve the slots from chrome extension storage.
- * If not exist, set it as default slots.
+ * Get the slots from chrome extension storage.
+ * If not exist, set it as default slots and return.
  * @returns {Promise<Slot[]>} The promise resolved with slots.
  */
-function retrieveSlotsOrSetDefault() {
+function getSlotsOrSetDefault() {
   return new Promise((resolve) => {
     chrome.storage.sync.get(["slots"], (results) => {
       /** @type {Slot[]} */
@@ -85,10 +86,11 @@ async function injectContentScript() {
 
 /**
  * Setup the current theme and chrome timer.
+ * @param {Slot[]} slots The slots.
  * @returns {Promise<void>} The promise to theme and timer setup.
  */
-async function setupThemeAndTimer() {
-  const [currentSlot, nextSlot] = getTargetSlot();
+async function setupThemeAndTimer(slots) {
+  const [currentSlot, nextSlot] = getTargetSlot(slots);
 
   const tabs = await getVisualStudioTabs();
   for (const tab of tabs) {
@@ -109,9 +111,10 @@ async function setupThemeAndTimer() {
 
 /**
  * Get the current target slot and next slot based on the time and slots.
+ * @param {Slot[]} slots The slots.
  * @returns {[Slot, Slot]} The targeted slot and next slot.
  */
-function getTargetSlot() {
+function getTargetSlot(slots) {
   const currentTime = new Date();
 
   let index = 0;
