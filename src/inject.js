@@ -64,16 +64,24 @@
         // If the context module cannot be loaded within 10 seconds, reject the
         // promise with time out failure. Reset the cache to retry next time.
         const timer = setTimeout(() => {
-          reject(new Error("Timeout to load the Visual Studio context module"));
+          reject(new Error("Timeout to load Visual Studio context"));
           contextPromise = undefined;
         }, 10 * 1000);
 
-        // In some Azure DevOps pages, the context module is not loaded yet.
+        // In some Azure DevOps pages, the context module is already loaded.
+        // We need to use the sync require syntax to get it.
+        try {
+          resolve(window.require("VSS/Platform/Context"));
+        } catch {}
+
+        // But in some pages, the context module is not loaded yet.
         // We need to use the async require syntax to acquire it.
-        window.require(["VSS/Platform/Context"], (context) => {
-          clearTimeout(timer);
-          resolve(context);
-        });
+        try {
+          window.require(["VSS/Platform/Context"], (context) => {
+            clearTimeout(timer);
+            resolve(context);
+          });
+        } catch {}
       });
     }
 
