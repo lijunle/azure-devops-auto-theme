@@ -1,5 +1,3 @@
-// @ts-check
-
 /** @type {Slot[]} */
 const defaultSlots = [
   { time: "06:00", theme: "ms.vss-web.vsts-theme" },
