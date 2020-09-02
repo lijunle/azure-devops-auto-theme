@@ -23,7 +23,10 @@ type ChannelMessageApplyTheme = {
 };
 
 interface Window {
-  require(context: "VSS/Platform/Context"): VssContext;
+  require(
+    deps: ["VSS/Platform/Context"],
+    callback: (context: VssContext) => void
+  ): void;
 }
 
 type VssContext = {

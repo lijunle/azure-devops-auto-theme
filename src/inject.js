@@ -15,27 +15,30 @@
   function getService() {
     if (!servicePromise) {
       servicePromise = new Promise((resolve) => {
-        // The context will not initialize service again if name exists.
-        // Append channel to the service name to make sure we could resolve
-        // the service on each new injection (e.g., extension updated).
-        const context = window.require("VSS/Platform/Context");
-        const serviceName = `AzureDevOpsAutoThemeService-${channel}`;
-        context.Services.add(serviceName, {
-          options: 1,
-          serviceFactory: class extends context.VssService {
-            constructor() {
-              super();
+        // In some Azure DevOps pages, the context module is not loaded yet.
+        // We need to use the async require syntax to acquire it.
+        window.require(["VSS/Platform/Context"], (context) => {
+          // The context will not initialize service again if name exists.
+          // Append channel to the service name to make sure we could resolve
+          // the service on each new injection (e.g., extension updated).
+          const serviceName = `AzureDevOpsAutoThemeService-${channel}`;
+          context.Services.add(serviceName, {
+            options: 1,
+            serviceFactory: class extends context.VssService {
+              constructor() {
+                super();
 
-              // The service is not initialized at this moment, do not
-              // access page context here.
-              resolve(this);
-            }
-          },
+                // The service is not initialized at this moment, do not
+                // access page context here.
+                resolve(this);
+              }
+            },
+          });
+          context.Services.notify(
+            { key: serviceName, value: { options: 4 } },
+            "add"
+          );
         });
-        context.Services.notify(
-          { key: serviceName, value: { options: 4 } },
-          "add"
-        );
       });
     }
 
