@@ -16,8 +16,9 @@ chrome.runtime.onStartup.addListener(initialize);
 chrome.alarms.onAlarm.addListener(setupThemeAndTimer);
 
 chrome.storage.onChanged.addListener(async (changes) => {
-  if (changes["slots"] && changes["slots"].newValue) {
-    slots = changes["slots"].newValue;
+  const newSlots = changes["slots"]?.newValue;
+  if (newSlots) {
+    slots = newSlots;
     await setupThemeAndTimer();
   }
 });
