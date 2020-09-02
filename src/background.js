@@ -104,7 +104,7 @@ async function setupThemeAndTimer() {
 
   const nextTime = parseSlotTime(nextSlot);
   chrome.alarms.clearAll();
-  chrome.alarms.create({ when: nextTime.getTime() - Date.now() });
+  chrome.alarms.create({ when: nextTime.getTime() });
 }
 
 /**
