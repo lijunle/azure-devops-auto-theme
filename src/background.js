@@ -13,10 +13,12 @@ chrome.runtime.onInstalled.addListener(initialize);
 
 chrome.runtime.onStartup.addListener(initialize);
 
+chrome.alarms.onAlarm.addListener(setupThemeAndTimer);
+
 chrome.storage.onChanged.addListener(async (changes) => {
   if (changes["slots"] && changes["slots"].newValue) {
     slots = changes["slots"].newValue;
-    await switchTheme();
+    await setupThemeAndTimer();
   }
 });
 
@@ -27,8 +29,7 @@ chrome.storage.onChanged.addListener(async (changes) => {
 async function initialize() {
   slots = await retrieveSlotsOrSetDefault();
   await injectContentScript();
-  await switchTheme();
-  setInterval(switchTheme, 60 * 1000);
+  await setupThemeAndTimer();
 }
 
 /**
@@ -82,47 +83,56 @@ async function injectContentScript() {
 }
 
 /**
- * Send messages to switch theme on all Visual Studio tabs.
- * @returns {Promise<void>} The promise to messages sent.
+ * Setup the current theme and chrome timer.
+ * @returns {Promise<void>} The promise to theme and timer setup.
  */
-async function switchTheme() {
-  const theme = getTheme();
+async function setupThemeAndTimer() {
+  const [currentSlot, nextSlot] = getTargetSlot();
+
   const tabs = await getVisualStudioTabs();
   for (const tab of tabs) {
     if (tab.id) {
       /** @type {Omit<ChannelMessageApplyTheme, "channel">} */
       const message = {
         action: "applyTheme",
-        theme,
+        theme: currentSlot.theme,
       };
       chrome.tabs.sendMessage(tab.id, message);
     }
   }
+
+  const nextTime = parseSlotTime(nextSlot);
+  chrome.alarms.clearAll();
+  chrome.alarms.create({ when: nextTime.getTime() - Date.now() });
 }
 
 /**
- * Get the target theme based on the current time and slots.
- * @returns {ThemeId} The target theme.
+ * Get the current target slot and next slot based on the time and slots.
+ * @returns {[Slot, Slot]} The targeted slot and next slot.
  */
-function getTheme() {
-  const date = new Date();
-  const currentTime = { hour: date.getHours(), minute: date.getMinutes() };
+function getTargetSlot() {
+  const currentTime = new Date();
 
   let index = 0;
-  while (index < slots.length) {
-    const parts = slots[index].time.split(":");
-    const slotTime = { hour: Number(parts[0]), minute: Number(parts[1]) };
-    if (
-      slotTime.hour < currentTime.hour ||
-      (slotTime.hour === currentTime.hour &&
-        slotTime.minute <= currentTime.minute)
-    ) {
-      index++;
-    } else {
-      break;
-    }
+  while (parseSlotTime(slots[index]) <= currentTime) {
+    index++;
   }
 
-  index = index === 0 ? slots.length - 1 : index - 1;
-  return slots[index].theme;
+  const targetIndex = index === 0 ? slots.length - 1 : index - 1;
+  return [slots[targetIndex], slots[index]];
+}
+
+/**
+ * Parse the time of a slot to today time.
+ * @param {Slot} slot The slot.
+ * @returns {Date} The parsed time.
+ */
+function parseSlotTime(slot) {
+  const parts = slot.time.split(":");
+  const time = new Date();
+  time.setHours(Number(parts[0]));
+  time.setMinutes(Number(parts[1]));
+  time.setSeconds(0);
+  time.setMilliseconds(0);
+  return time;
 }
