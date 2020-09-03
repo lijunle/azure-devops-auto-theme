@@ -120,8 +120,10 @@ function getTargetSlot(slots) {
     index++;
   }
 
-  const targetIndex = index === 0 ? slots.length - 1 : index - 1;
-  return [slots[targetIndex], slots[index]];
+  const targetIndex = (index - 1 + slots.length) % slots.length;
+  const nextIndex = index % slots.length;
+
+  return [slots[targetIndex], slots[nextIndex]];
 }
 
 /**
