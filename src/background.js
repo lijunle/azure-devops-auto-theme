@@ -116,7 +116,7 @@ function getTargetSlot(slots) {
   const currentTime = new Date();
 
   let index = 0;
-  while (parseSlotTime(slots[index]) <= currentTime) {
+  while (index < slots.length && parseSlotTime(slots[index]) <= currentTime) {
     index++;
   }
 
